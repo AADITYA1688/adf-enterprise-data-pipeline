@@ -1,0 +1,25 @@
+{
+	"name": "tr_OnNewFileArrival",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "DynamicFileIngestion",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/landing/blobs/CSV2/",
+			"blobPathEndsWith": ".csv",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/31a84ae2-ece1-4b75-81df-a768fc9aee8a/resourceGroups/databricksrsgrp/providers/Microsoft.Storage/storageAccounts/datalakedbaadi",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}

@@ -1,0 +1,65 @@
+{
+	"name": "df_TransformCustomerData",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference"
+					},
+					"name": "SqlCustomerSource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference"
+					},
+					"name": "TargetGoldTable"
+				}
+			],
+			"transformations": [
+				{
+					"name": "FilterHighValueSales"
+				},
+				{
+					"name": "AddEnterpriseFlags"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          SaleID as integer,",
+				"          CustomerName as string,",
+				"          Amount as decimal(10,2),",
+				"          LastModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> SqlCustomerSource",
+				"SqlCustomerSource filter(Amount > 1000) ~> FilterHighValueSales",
+				"FilterHighValueSales derive(CustomerName = upper(CustomerName),",
+				"          CustomerTier = iif(Amount >= 5000, 'VIP Tier', 'Standard Tier')) ~> AddEnterpriseFlags",
+				"AddEnterpriseFlags sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CustomerName,",
+				"          Amount,",
+				"          LastModifiedDate,",
+				"          CustomerTier",
+				"     )) ~> TargetGoldTable"
+			]
+		}
+	}
+}

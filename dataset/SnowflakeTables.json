@@ -1,0 +1,17 @@
+{
+	"name": "SnowflakeTables",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "SnowflakeData",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SnowflakeV2Table",
+		"schema": [],
+		"typeProperties": {
+			"schema": "TP_STAGE",
+			"table": "YELLOW_TAXI_DATA"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

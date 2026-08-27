@@ -1,0 +1,27 @@
+{
+	"name": "ds_adls_archive_binary",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_FileName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().p_FileName",
+					"type": "Expression"
+				},
+				"fileSystem": "archive"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

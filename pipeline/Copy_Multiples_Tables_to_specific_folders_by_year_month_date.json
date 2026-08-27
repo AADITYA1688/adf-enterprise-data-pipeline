@@ -1,0 +1,116 @@
+{
+	"name": "Copy_Multiples_Tables_to_specific_folders_by_year_month_date",
+	"properties": {
+		"activities": [
+			{
+				"name": "Read_All_Table_Names",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [
+					{
+						"name": "schemaName",
+						"value": "saleslt"
+					},
+					{
+						"name": "folderName",
+						"value": "MultipleFiles"
+					}
+				],
+				"typeProperties": {
+					"items": {
+						"value": "@createArray('Customer','Product','CustomerAddress')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy_Tables_to_CSV",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "@{'saleslt'}.@{item()}"
+								},
+								{
+									"name": "Destination",
+									"value": "landing/@{'<folderPathParam>'}/@{'<fileNameParam>'}"
+								},
+								{
+									"name": "folderName",
+									"value": "Multiple_Files"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SQL_DB_GENERIC_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"schemaNameParam": "saleslt",
+										"tableNameParam": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ADLS_CSV_GENERIC_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"folderPathParam": {
+											"value": "@concat(item(),'/',utcnow('yyyy'),'/',utcnow('MMMM'),'/',utcnow('dd'))",
+											"type": "Expression"
+										},
+										"fileNameParam": {
+											"value": "@concat(item(),'_',utcNow('yyyy-mm-dd'))",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-08-18T12:54:56Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

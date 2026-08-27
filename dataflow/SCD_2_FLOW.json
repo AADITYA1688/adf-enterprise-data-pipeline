@@ -1,0 +1,237 @@
+{
+	"name": "SCD_2_FLOW",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "F_EMP_DATA",
+						"type": "DatasetReference"
+					},
+					"name": "inputFileEMPDATA"
+				},
+				{
+					"dataset": {
+						"referenceName": "EMP_DATA_DB",
+						"type": "DatasetReference"
+					},
+					"name": "SRCEMPTBL"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "EMP_DATA_DB",
+						"type": "DatasetReference"
+					},
+					"name": "TGTTBLUPD"
+				},
+				{
+					"dataset": {
+						"referenceName": "EMP_DATA_DB",
+						"type": "DatasetReference"
+					},
+					"name": "TGTTBLINSUPD"
+				},
+				{
+					"dataset": {
+						"referenceName": "EMP_DATA_DB",
+						"type": "DatasetReference"
+					},
+					"name": "INSNEWTGT"
+				},
+				{
+					"dataset": {
+						"referenceName": "F_UNMATCHED_ROWS",
+						"type": "DatasetReference"
+					},
+					"name": "DEFAULTTGTFILE"
+				}
+			],
+			"transformations": [
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "ChangedFLAG"
+				},
+				{
+					"name": "setFLAGFOROLDROWS"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "alterRowUPDATE"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "setFLAGFORUPADTEDROWS"
+				},
+				{
+					"name": "select3"
+				},
+				{
+					"name": "setNEWRECORDSFLAG"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          EMP_ID as integer '000',",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> inputFileEMPDATA",
+				"source(output(",
+				"          UNIQ_ID as integer,",
+				"          EMP_ID as integer,",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string,",
+				"          ACTIVE_FLAG as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'Select EMP_ID as SRC_EMP_ID,EMP_NAME AS SRC_EMP_NAME,EMP_LOCATION AS SRC_EMP_LOCATION,UNIQ_ID AS SRC_UNIQ_ID,ACTIVE_FLAG AS SRC_ACTIVE_FLAG from EMP_DATA where ACTIVE_FLAG=1',",
+				"     format: 'query') ~> SRCEMPTBL",
+				"inputFileEMPDATA, SRCEMPTBL lookup(inputFileEMPDATA@EMP_ID == SRCEMPTBL@EMP_ID,",
+				"     multiple: true,",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 derive(CHANGED_FLAG = iif(!isNull(SRCEMPTBL@EMP_ID) && SRCEMPTBL@EMP_LOCATION!=inputFileEMPDATA@EMP_LOCATION,'Y','N'),",
+				"          NEW_FLAG = iif(isNull(SRCEMPTBL@EMP_ID),'Y','N')) ~> ChangedFLAG",
+				"split1@UPDROWS derive(ACTIVE_FLAG = 0) ~> setFLAGFOROLDROWS",
+				"setFLAGFOROLDROWS select(mapColumn(",
+				"          EMP_ID = split1@UPDROWS@EMP_ID,",
+				"          ACTIVE_FLAG",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 alterRow(updateIf(1==1)) ~> alterRowUPDATE",
+				"ChangedFLAG split(CHANGED_FLAG=='Y' && NEW_FLAG=='N',",
+				"     NEW_FLAG=='Y',",
+				"     disjoint: false) ~> split1@(UPDROWS, INSNEWROWS, DEFAULT)",
+				"split1@UPDROWS select(mapColumn(",
+				"          EMP_ID = split1@UPDROWS@EMP_ID,",
+				"          EMP_NAME = split1@UPDROWS@EMP_NAME,",
+				"          EMP_LOCATION = split1@UPDROWS@EMP_LOCATION,",
+				"          UNIQ_ID",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select2 derive(ACTIVE_FLAG = 1,",
+				"          UNIQ_ID = UNIQ_ID*100+1) ~> setFLAGFORUPADTEDROWS",
+				"split1@INSNEWROWS select(mapColumn(",
+				"          EMP_ID = split1@INSNEWROWS@EMP_ID,",
+				"          EMP_NAME = split1@INSNEWROWS@EMP_NAME,",
+				"          EMP_LOCATION = split1@INSNEWROWS@EMP_LOCATION",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select3",
+				"select3 derive(UNIQ_ID = EMP_ID*250+1,",
+				"          ACTIVE_FLAG = 1) ~> setNEWRECORDSFLAG",
+				"alterRowUPDATE sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          UNIQ_ID as integer,",
+				"          EMP_ID as integer,",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string,",
+				"          ACTIVE_FLAG as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['EMP_ID'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 1,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          EMP_ID,",
+				"          ACTIVE_FLAG",
+				"     )) ~> TGTTBLUPD",
+				"setFLAGFORUPADTEDROWS sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          UNIQ_ID as integer,",
+				"          EMP_ID as integer,",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string,",
+				"          ACTIVE_FLAG as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     batchSize: 1,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 2,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          UNIQ_ID,",
+				"          EMP_ID,",
+				"          EMP_NAME,",
+				"          EMP_LOCATION,",
+				"          ACTIVE_FLAG",
+				"     )) ~> TGTTBLINSUPD",
+				"setNEWRECORDSFLAG sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          UNIQ_ID as integer,",
+				"          EMP_ID as integer,",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string,",
+				"          ACTIVE_FLAG as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     batchSize: 1,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 3,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          UNIQ_ID,",
+				"          EMP_ID = ACTIVE_FLAG,",
+				"          EMP_NAME,",
+				"          EMP_LOCATION,",
+				"          ACTIVE_FLAG",
+				"     )) ~> INSNEWTGT",
+				"split1@DEFAULT sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          AddressID as string,",
+				"          AddressLine1 as string,",
+				"          AddressLine2 as string,",
+				"          City as string,",
+				"          StateProvince as string,",
+				"          CountryRegion as string,",
+				"          PostalCode as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 4) ~> DEFAULTTGTFILE"
+			]
+		}
+	}
+}

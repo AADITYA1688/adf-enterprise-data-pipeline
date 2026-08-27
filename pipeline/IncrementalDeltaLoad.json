@@ -1,0 +1,178 @@
+{
+	"name": "IncrementalDeltaLoad",
+	"properties": {
+		"activities": [
+			{
+				"name": "LookupOldWatermark",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT WatermarkValue FROM Watermark_Control_Log WHERE TableName = 'CRM_Sales_Source';",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "dbo",
+							"tableNameParam": "Watermark_Control_Log"
+						}
+					}
+				}
+			},
+			{
+				"name": "LookupNewWatermark",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT MAX(LastModifiedDate) as NewWatermarkValue FROM CRM_Sales_Source;",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "dbo",
+							"tableNameParam": "CRM_Sales_Source"
+						}
+					}
+				}
+			},
+			{
+				"name": "DeltaCopySourceToTarget",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "LookupOldWatermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "LookupNewWatermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat('SELECT * FROM CRM_Sales_Source WHERE LastModifiedDate > ''', activity('LookupOldWatermark').output.firstRow.WatermarkValue, ''' AND LastModifiedDate <= ''', activity('LookupNewWatermark').output.firstRow.NewWatermarkValue, '''')",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "dbo",
+							"tableNameParam": "CRM_Sales_Source "
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "dbo",
+							"tableNameParam": "CRM_Sales_Destination"
+						}
+					}
+				]
+			},
+			{
+				"name": "UpdateWatermarkLogTable",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "DeltaCopySourceToTarget",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat('UPDATE Watermark_Control_Log SET WatermarkValue = ''', activity('LookupNewWatermark').output.firstRow.NewWatermarkValue, ''' WHERE TableName = ''CRM_Sales_Source''; SELECT 1 as ClearStatus;')",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "dbo",
+							"tableNameParam": "Watermark_Control_Log"
+						}
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-08-26T10:22:06Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

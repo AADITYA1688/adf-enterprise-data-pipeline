@@ -1,0 +1,121 @@
+{
+	"name": "Ingestion_Product_To_JSON",
+	"properties": {
+		"activities": [
+			{
+				"name": "Count_Product_Data",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "Select Count(*) as Total_Records from saleslt.Product ",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "Saleslt",
+							"tableNameParam": "Product"
+						}
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Check Data Count",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Count_Product_Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('Count_Product_Data').output.firstRow.Total_Records,400)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy productData",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SQL_DB_GENERIC_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"schemaNameParam": "Saleslt",
+										"tableNameParam": "Product"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ADLS_CSV_GENERIC_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"folderPathParam": "Product",
+										"fileNameParam": "F_Product.csv"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-08-18T12:54:56Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

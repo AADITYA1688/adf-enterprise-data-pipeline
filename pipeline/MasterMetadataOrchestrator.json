@@ -1,0 +1,249 @@
+{
+	"name": "MasterMetadataOrchestrator",
+	"properties": {
+		"activities": [
+			{
+				"name": "GetActiveTableList",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT SourceTableName, TargetTableName, WatermarkColumn FROM ADF_Pipeline_Metadata",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_azure_sql_target",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_TableName": {
+								"value": "dataset().p_TableName",
+								"type": "Expression"
+							},
+							"p_TargetTable": {
+								"value": "dataset().p_TargetTable",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "IterateTables",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetActiveTableList",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetActiveTableList').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "LookupOldWM",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "@concat('SELECT WatermarkValue FROM Watermark_Control_Log WHERE TableName = ''', item().SourceTableName, '''')",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_azure_sql_target",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_TableName": "@item().SourceTableName",
+										"p_TargetTable": "@string('')"
+									}
+								}
+							}
+						},
+						{
+							"name": "LookupNewWM",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "@concat('SELECT MAX(', item().WatermarkColumn, ') as NewWatermarkValue FROM ', item().SourceTableName)",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "ds_azure_sql_target",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_TableName": "@item().SourceTableName",
+										"p_TargetTable": "@string('')"
+									}
+								}
+							}
+						},
+						{
+							"name": "DynamicDeltaCopy",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "LookupOldWM",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "LookupNewWM",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "@concat('SELECT * FROM ', item().SourceTableName, ' WHERE ', item().WatermarkColumn, ' > ''', activity('LookupOldWM').output.firstRow.WatermarkValue, ''' AND ', item().WatermarkColumn, ' <= ''', activity('LookupNewWM').output.firstRow.NewWatermarkValue, '''')\n",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false,
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_azure_sql_target",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_TableName": {
+											"value": "@item().SourceTableName",
+											"type": "Expression"
+										},
+										"p_TargetTable": "@string('')"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_azure_sql_target",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_TableName": "@string('')",
+										"p_TargetTable": "@item().TargetTableName"
+									}
+								}
+							]
+						},
+						{
+							"name": "UpdateWMLog",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "DynamicDeltaCopy",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "@concat('UPDATE Watermark_Control_Log SET WatermarkValue = ''', activity('LookupNewWM').output.firstRow.NewWatermarkValue, ''' WHERE TableName = ''', item().SourceTableName, '''; SELECT 1 as ClearStatus;')",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "SQL_DB_GENERIC_DS",
+									"type": "DatasetReference",
+									"parameters": {
+										"schemaNameParam": "dbo",
+										"tableNameParam": "Watermark_Control_Log"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-08-26T11:36:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

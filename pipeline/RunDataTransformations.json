@@ -1,0 +1,44 @@
+{
+	"name": "RunDataTransformations",
+	"properties": {
+		"activities": [
+			{
+				"name": "ExecuteCustomerTransformations",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "df_TransformCustomerData",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"SqlCustomerSource": {
+								"schemaNameParam": "dbo",
+								"tableNameParam": "CRM_Sales_Source"
+							},
+							"TargetGoldTable": {
+								"schemaNameParam": "dbo",
+								"tableNameParam": "BI_Gold_Customers"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-08-27T09:55:31Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

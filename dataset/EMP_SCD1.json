@@ -1,0 +1,31 @@
+{
+	"name": "EMP_SCD1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "EMP_ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "EMP_NAME",
+				"type": "varchar"
+			},
+			{
+				"name": "EMP_LOCATION",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "EMP_DATA_SCD1"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

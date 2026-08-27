@@ -1,0 +1,20 @@
+{
+	"name": "mission100aaditya2026",
+	"properties": {
+		"globalConfigurations": {
+			"PipelineBillingEnabled": "true",
+			"factoryStagingLSReferenceName": "AzureDataLakeStorage",
+			"factoryStagingLSType": "LinkedServiceReference"
+		},
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "ab80268f-0742-4e2e-a42c-4777227a550c",
+		"tenantId": "e976e315-e0e6-4b44-8863-ba094a16133b"
+	}
+}

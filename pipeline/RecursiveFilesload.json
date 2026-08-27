@@ -1,0 +1,310 @@
+{
+	"name": "RecursiveFilesload",
+	"properties": {
+		"activities": [
+			{
+				"name": "recursivefilesread",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFolderPath": "csv",
+							"wildcardFileName": "*.csv",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "VENDORID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "VendorID",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "TPEP_PICKUP_DATETIME",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "tpep_pickup_datetime",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "TPEP_DROPOFF_DATETIME",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "tpep_dropoff_datetime",
+									"type": "DateTime",
+									"physicalType": "datetime2"
+								}
+							},
+							{
+								"source": {
+									"name": "PASSENGER_COUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "passenger_count",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "TRIP_DISTANCE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "trip_distance",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "RATECODEID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "RatecodeID",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "STORE_AND_FWD_FLAG",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "store_and_fwd_flag",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PULOCATIONID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "PULocationID",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "DOLOCATIONID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "DOLocationID",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "PAYMENT_TYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "payment_type",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "FARE_AMOUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "fare_amount",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "EXTRA",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "extra",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "MTA_TAX",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "mta_tax",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "TIP_AMOUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "tip_amount",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "TOLLS_AMOUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "tolls_amount",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "IMPROVEMENT_SURCHARGE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "improvement_surcharge",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "TOTAL_AMOUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "total_amount",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CONGESTION_SURCHARGE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "congestion_surcharge",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "AIRPORT_FEE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "Airport_fee",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CBD_CONGESTION_FEE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "cbd_congestion_fee",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "F_CUSTOMER_CSV",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "dbo",
+							"tableNameParam": "YELLOW_TAXI_DATA"
+						}
+					}
+				]
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-08-25T08:32:48Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,102 @@
+{
+	"name": "SCD_TYPE1_FLOW",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "EMP_SCD1",
+						"type": "DatasetReference"
+					},
+					"name": "SRCEMPTBL"
+				},
+				{
+					"dataset": {
+						"referenceName": "F_EMP_DATA",
+						"type": "DatasetReference"
+					},
+					"name": "INPSRCFILE"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "EMP_SCD1",
+						"type": "DatasetReference"
+					},
+					"name": "TGTEMPSCD1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "MapDrifted1",
+					"description": "Creates an explicit mapping for each drifted column"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "AlterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          EMP_ID as integer,",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> SRCEMPTBL",
+				"source(output(",
+				"          EMP_ID as string,",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> INPSRCFILE",
+				"MapDrifted1, SRCEMPTBL lookup(empid == SRCEMPTBL@EMP_ID,",
+				"     multiple: true,",
+				"     broadcast: 'auto')~> lookup1",
+				"INPSRCFILE derive(empid = toInteger(byName('empid')),",
+				"          empname = toString(byName('empname')),",
+				"          emplocation = toString(byName('emplocation'))) ~> MapDrifted1",
+				"lookup1 select(mapColumn(",
+				"          empid,",
+				"          empname,",
+				"          emplocation",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 alterRow(upsertIf(1==1)) ~> AlterRow1",
+				"AlterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          EMP_ID as integer,",
+				"          EMP_NAME as string,",
+				"          EMP_LOCATION as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:false,",
+				"     upsertable:true,",
+				"     keys:['EMP_ID'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          EMP_ID = empid,",
+				"          EMP_NAME = empname,",
+				"          EMP_LOCATION = emplocation",
+				"     )) ~> TGTEMPSCD1"
+			]
+		}
+	}
+}
