@@ -18,8 +18,7 @@
 					"notebookPath": "https://adb-7405613440382866.6.azuredatabricks.net/editor/notebooks/996974702344614?o=7405613440382866#command/8268597618918855",
 					"baseParameters": {
 						"FileNameParameter": {
-							"value": "'automated_customers.csv'",
-							"type": "Expression"
+							"value": "'automated_customers.csv'"
 						}
 					}
 				},
