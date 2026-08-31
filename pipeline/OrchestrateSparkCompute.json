@@ -3,8 +3,8 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "RunPySparkTransformations",
-				"type": "DatabricksNotebook",
+				"name": "Job1",
+				"type": "DatabricksJob",
 				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
@@ -15,10 +15,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "https://adb-7405613440382866.6.azuredatabricks.net/editor/notebooks/996974702344614?o=7405613440382866#command/8268597618918855",
-					"baseParameters": {
-						"FileNameParameter": "automated_customers.csv"
-					}
+					"jobId": "709720361181884"
 				},
 				"linkedServiceName": {
 					"referenceName": "ls_Azure_Databricks_Compute_Fixed",
