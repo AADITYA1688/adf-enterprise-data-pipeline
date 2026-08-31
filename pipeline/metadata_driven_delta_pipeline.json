@@ -56,7 +56,14 @@
 						{
 							"name": "Job1",
 							"type": "DatabricksJob",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "SP_Log_Start",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -85,6 +92,107 @@
 							"linkedServiceName": {
 								"referenceName": "ls_Azure_Databricks_Compute_Fixed",
 								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "SP_Log_Start",
+							"type": "Script",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabase",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "INSERT INTO ADF_Pipeline_Audit_Log (PipelineRunID, TableName, ExecutionStatus)\nVALUES ('@{pipeline().RunId}', '@{item().TargetTableName}', 'Running');",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						},
+						{
+							"name": "SP_Log_Success",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "Job1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabase",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "UPDATE ADF_Pipeline_Audit_Log \nSET EndTime = GETDATE(),\n    DurationInSeconds = DATEDIFF(SECOND, StartTime, GETDATE()),\n    ExecutionStatus = 'Success'\nWHERE PipelineRunID = '@{pipeline().RunId}' AND TableName = '@{item().TargetTableName}';",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						},
+						{
+							"name": "SP_Log_Failure",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "Job1",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabase",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "UPDATE ADF_Pipeline_Audit_Log \nSET EndTime = GETDATE(),\n    DurationInSeconds = DATEDIFF(SECOND, StartTime, GETDATE()),\n    ExecutionStatus = 'Failed'\nWHERE PipelineRunID = '@{pipeline().RunId}' AND TableName = '@{item().TargetTableName}';",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
 							}
 						}
 					]
