@@ -1,0 +1,96 @@
+{
+	"name": "metadata_driven_delta_pipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get_Active_Tables",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT SourceTableName, TargetTableName, MergeKey \nFROM ADF_Control_Log \nWHERE IsActive = 1",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SQL_DB_GENERIC_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schemaNameParam": "dbo",
+							"tableNameParam": "ADF_Control_Log"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get_Active_Tables",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get_Active_Tables').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Job1",
+							"type": "DatabricksJob",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"jobId": "296644346295267",
+								"jobParameters": {
+									"source_table": {
+										"value": "@item().SourceTableName",
+										"type": "Expression"
+									},
+									"target_table": {
+										"value": "@item().TargetTableName",
+										"type": "Expression"
+									},
+									"merge_key": {
+										"value": "@item().MergeKey",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_Azure_Databricks_Compute_Fixed",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": []
+	}
+}
