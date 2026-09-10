@@ -1,0 +1,17 @@
+{
+	"name": "triggersalesdatacopy",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/landing/blobs/",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/31a84ae2-ece1-4b75-81df-a768fc9aee8a/resourceGroups/RG_Azure_Car_Sales_Project/providers/Microsoft.Storage/storageAccounts/aadicarsalesdatalake",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}
