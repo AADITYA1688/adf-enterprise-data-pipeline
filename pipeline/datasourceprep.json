@@ -46,7 +46,7 @@
 						"referenceName": "salesdatafile",
 						"type": "DatasetReference",
 						"parameters": {
-							"file_name": "SalesData.csv"
+							"file_name": "IncrementalSales.csv"
 						}
 					}
 				],
