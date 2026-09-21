@@ -1,0 +1,36 @@
+{
+	"name": "DS_JSON",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@concat('Rates_' , utcNow() , '.json')",
+					"type": "Expression"
+				},
+				"folderPath": "Json_data",
+				"fileSystem": "target"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"CUST_ID": {
+					"type": "integer"
+				},
+				"CUST_NAME": {
+					"type": "string"
+				},
+				"CUST_CITY": {
+					"type": "string"
+				}
+			}
+		}
+	}
+}

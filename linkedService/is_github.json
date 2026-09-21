@@ -1,0 +1,15 @@
+{
+	"name": "is_github",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "https://github.com/AADITYA1688",
+			"enableServerCertificateValidation": false,
+			"authenticationType": "Basic",
+			"userName": "AADITYA1688",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEI3QzE0RDlBLUJDNjgtNDRFNS05MDk0LTJDRkM5NjczMDE5Ql9jYTdjNzAzZS1jYWJlLTQwMTMtODBkYi04MmE4YjJhZjEwN2YiDQp9"
+		}
+	}
+}

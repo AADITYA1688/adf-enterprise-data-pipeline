@@ -80,9 +80,9 @@
 									"referenceName": "SCD_2_FLOW",
 									"type": "DataFlowReference"
 								},
-								"integrationRuntime": {
-									"referenceName": "myIRDEV",
-									"type": "IntegrationRuntimeReference"
+								"compute": {
+									"coreCount": 8,
+									"computeType": "General"
 								},
 								"traceLevel": "Fine"
 							}
